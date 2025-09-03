@@ -21,7 +21,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GalleryService()),
       ],
       child: MaterialApp(
-        title: 'Gallery Cleaner',
+        title: 'GalClean',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,

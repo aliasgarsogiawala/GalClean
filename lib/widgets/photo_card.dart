@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import 'package:intl/intl.dart';
 
 class PhotoCard extends StatelessWidget {
   final AssetEntity photo;
-  final double? swipeProgress;
+  final double? swipeProgress; // kept for compatibility; overlay not rendered here
 
   const PhotoCard({
     super.key,
@@ -14,168 +15,89 @@ class PhotoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 8,
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          // Photo image
-          FutureBuilder(
-            future: photo.originBytes,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: MemoryImage(snapshot.data!),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                );
-              } else if (snapshot.hasError) {
-                return Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  child: const Center(
-                    child: Icon(Icons.error, size: 48),
-                  ),
-                );
-              } else {
-                return Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              }
-            },
-          ),
-
-          // Swipe direction indicator overlay
-          if (swipeProgress != null) ...[
-            _buildSwipeOverlay(context, swipeProgress!),
-          ],
-
-          // Photo info overlay
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.8),
-                    Colors.transparent,
-                  ],
-                ),
+    return RepaintBoundary(
+      child: Card(
+        elevation: 10,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        shadowColor: Colors.black.withOpacity(0.2),
+        child: Stack(
+          children: [
+            // Photo image using AssetEntityImage for simplicity and performance
+            Positioned.fill(
+              child: AssetEntityImage(
+                photo,
+                thumbnailSize: const ThumbnailSize(200, 200),
+                fit: BoxFit.cover,
               ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    DateFormat('MMMM dd, yyyy').format(photo.createDateTime),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+            ),
+
+            // Photo info overlay
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.8),
+                      Colors.transparent,
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        color: Colors.white.withOpacity(0.8),
-                        size: 14,
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      DateFormat('MMMM dd, yyyy').format(photo.createDateTime),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        DateFormat('h:mm a').format(photo.createDateTime),
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          color: Colors.white.withOpacity(0.85),
+                          size: 14,
                         ),
-                      ),
-                      const Spacer(),
-                      if (photo.width != null && photo.height != null) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          DateFormat('h:mm a').format(photo.createDateTime),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Spacer(),
+                        // Resolution info
                         Icon(
                           Icons.photo_size_select_actual,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withOpacity(0.85),
                           size: 14,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${photo.width} × ${photo.height}',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withOpacity(0.85),
                             fontSize: 14,
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSwipeOverlay(BuildContext context, double swipeProgress) {
-    final horizontalProgress = swipeProgress;
-    final isSwipingLeft = horizontalProgress < 0;
-    final isSwipingRight = horizontalProgress > 0;
-    final opacity = (horizontalProgress.abs() * 2).clamp(0.0, 1.0);
-
-    if (opacity < 0.1) return const SizedBox.shrink();
-
-    Color overlayColor;
-    IconData icon;
-    String text;
-
-    if (isSwipingLeft) {
-      overlayColor = Colors.red.withOpacity(opacity * 0.8);
-      icon = Icons.delete;
-      text = 'DELETE';
-    } else {
-      overlayColor = Colors.green.withOpacity(opacity * 0.8);
-      icon = Icons.favorite;
-      text = 'KEEP';
-    }
-
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: overlayColor,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 64,
-              color: Colors.white,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

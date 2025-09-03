@@ -37,6 +37,7 @@ dependencies:
 
   # Gallery and photo management
   photo_manager: ^3.0.0
+  photo_manager_image_provider: ^2.2.0
 
   # Permissions handling
   permission_handler: ^11.0.0

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:swipable_stack/swipable_stack.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import '../services/gallery_service.dart';
 import '../widgets/photo_card.dart';
 import '../widgets/swipe_buttons.dart';
@@ -56,6 +57,34 @@ class _SwipeScreenState extends State<SwipeScreen> {
     Navigator.pushReplacementNamed(context, '/summary');
   }
 
+  Future<void> _onEndSession() async {
+    final galleryService = Provider.of<GalleryService>(context, listen: false);
+    final reviewed = galleryService.deletedCount + galleryService.keptCount;
+    final total = galleryService.photos.length;
+    final shouldEnd = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('End Session?'),
+            content: Text('You\'ve reviewed $reviewed of $total photos. End the session and view summary?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Continue Reviewing'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('End Session'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (shouldEnd) {
+      _navigateToSummary();
+    }
+  }
+
   void _onDeleteTap() {
     _controller.next(swipeDirection: SwipeDirection.left);
   }
@@ -83,6 +112,11 @@ class _SwipeScreenState extends State<SwipeScreen> {
         title: const Text('Clean Photos'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          IconButton(
+            onPressed: _onEndSession,
+            icon: const Icon(Icons.stop_circle_outlined),
+            tooltip: 'End session and view summary',
+          ),
           Consumer<GalleryService>(
             builder: (context, galleryService, child) {
               return IconButton(
@@ -108,6 +142,25 @@ class _SwipeScreenState extends State<SwipeScreen> {
               _navigateToSummary();
             });
             return const Center(child: CircularProgressIndicator());
+          }
+
+          // Prefetch next image to reduce perceived jank (placed outside widget tree)
+          final nextIndex = _currentIndex + 1;
+          if (nextIndex < galleryService.photos.length) {
+            final next = galleryService.photos[nextIndex];
+            final size = MediaQuery.of(context).size;
+            final targetWidth = (size.width * 2).clamp(600.0, 1600.0).toInt();
+            final aspect = (next.width > 0 && next.height > 0)
+                ? next.width / next.height
+                : 4 / 5;
+            final targetHeight = ((targetWidth / aspect).clamp(1, 4000)).toInt();
+            final provider = AssetEntityImageProvider(
+              next,
+              isOriginal: false,
+              thumbnailSize: ThumbnailSize(targetWidth, targetHeight),
+            );
+            // fire-and-forget
+            precacheImage(provider, context);
           }
 
           return Column(
@@ -171,6 +224,19 @@ class _SwipeScreenState extends State<SwipeScreen> {
                 onKeep: _onKeepTap,
                 onUndo: _currentIndex > 0 ? _onUndo : null,
               ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: OutlinedButton.icon(
+                  onPressed: _onEndSession,
+                  icon: const Icon(Icons.stop_circle_outlined),
+                  label: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12.0),
+                    child: Text('End Session'),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
             ],
           );
         },

@@ -105,6 +105,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
         ),
         body: Consumer<GalleryService>(
           builder: (context, galleryService, child) {
+            final reviewedCount = galleryService.keptCount + galleryService.deletedCount;
             return Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -157,9 +158,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
                       Expanded(
                         child: _buildStatCard(
                           context,
-                          'Total Reviewed',
-                          '${galleryService.totalPhotos}',
-                          Icons.photo_library,
+                          'Reviewed',
+                          '$reviewedCount',
+                          Icons.playlist_add_check_circle_outlined,
                           Theme.of(context).colorScheme.primary,
                         ),
                       ),

@@ -26,7 +26,6 @@ class GalleryService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Check permissions first
       bool hasPermission = await PermissionUtils.hasGalleryPermissions();
       if (!hasPermission) {
         hasPermission = await PermissionUtils.requestGalleryPermissions();
@@ -38,7 +37,6 @@ class GalleryService extends ChangeNotifier {
         }
       }
 
-      // Get photo albums
       final albums = await PhotoManager.getAssetPathList(
         type: RequestType.image,
         hasAll: true,
@@ -51,7 +49,6 @@ class GalleryService extends ChangeNotifier {
         return false;
       }
 
-      // Get all photos from the main album
       final recentAlbum = albums.first;
       final assetCount = await recentAlbum.assetCountAsync;
       final assets = await recentAlbum.getAssetListRange(
@@ -59,14 +56,12 @@ class GalleryService extends ChangeNotifier {
         end: assetCount,
       );
 
-      // Filter photos by date range
       _photos = assets.where((asset) {
         final photoDate = asset.createDateTime;
         return photoDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
                photoDate.isBefore(endDate.add(const Duration(days: 1)));
       }).toList();
 
-      // Sort by creation date (newest first)
       _photos.sort((a, b) => b.createDateTime.compareTo(a.createDateTime));
 
       _isLoading = false;
@@ -109,7 +104,6 @@ class GalleryService extends ChangeNotifier {
   Future<bool> deleteMarkedPhotos() async {
     if (_photosToDelete.isEmpty) return true;
 
-    // Ensure we have full access on iOS; otherwise, deletions may be ignored
     final canDelete = await PermissionUtils.ensureFullAccessForDeletion();
     if (!canDelete) {
       _error = 'Full photo access is required to delete photos. Please grant "Full Access" in Settings > Privacy > Photos.';
@@ -120,7 +114,6 @@ class GalleryService extends ChangeNotifier {
     try {
       final deletedIds = await DeleteService.deleteAndReturnDeletedIds(_photosToDelete);
 
-      // Remove successfully deleted photos from our lists
       if (deletedIds.isNotEmpty) {
         _photos.removeWhere((photo) => deletedIds.contains(photo.id));
         _photosToDelete.removeWhere((photo) => deletedIds.contains(photo.id));

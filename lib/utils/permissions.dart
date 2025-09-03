@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:permission_handler/permission_handler.dart' as ph;
+import 'package:permission_handler/permission_handler.dart';
 
 class PermissionUtils {
   // Request basic gallery permissions sufficient for reading assets
@@ -14,9 +14,9 @@ class PermissionUtils {
 
     // As a fallback on Android, request manage external storage (older devices)
     if (Platform.isAndroid) {
-      await ph.Permission.storage.request();
-      await ph.Permission.manageExternalStorage.request();
-      final s = await ph.Permission.storage.status;
+      await Permission.storage.request();
+      await Permission.manageExternalStorage.request();
+      final s = await Permission.storage.status;
       return s.isGranted;
     }
     return false;
@@ -45,7 +45,7 @@ class PermissionUtils {
       final PermissionState retry = await PhotoManager.requestPermissionExtend();
       if (retry.isAuth && retry != PermissionState.limited) return true;
       // Open settings if still limited/denied
-      await ph.openAppSettings();
+      await openAppSettings();
       final PermissionState afterSettings = await PhotoManager.requestPermissionExtend();
       return afterSettings.isAuth && afterSettings != PermissionState.limited;
     }
@@ -55,6 +55,6 @@ class PermissionUtils {
   }
 
   static Future<void> openSettings() async {
-    await ph.openAppSettings();
+    await openAppSettings();
   }
 }

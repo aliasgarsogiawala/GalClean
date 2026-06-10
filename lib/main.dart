@@ -6,6 +6,7 @@ import 'screens/swipe_screen.dart';
 import 'screens/summary_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'services/gallery_service.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,10 +24,9 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'GalClean',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeMode.system,
         initialRoute: '/welcome',
         routes: {
           '/welcome': (context) => const WelcomeScreen(),

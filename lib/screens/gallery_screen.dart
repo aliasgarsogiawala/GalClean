@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../services/gallery_service.dart';
+import '../theme/app_theme.dart';
 import '../utils/permissions.dart';
 
 class GalleryScreen extends StatefulWidget {
@@ -28,7 +29,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
   }
 
   Future<void> _loadPhotos() async {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args == null) {
       setState(() {
         _error = 'No date range provided';
@@ -46,7 +48,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
       _error = null;
     });
 
-    final success = await galleryService.loadPhotosFromDateRange(startDate, endDate);
+    final success =
+        await galleryService.loadPhotosFromDateRange(startDate, endDate);
 
     if (!mounted) return;
     setState(() {
@@ -63,11 +66,10 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Photos Found'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
+      appBar: AppBar(title: const Text('Your photos')),
       body: Consumer<GalleryService>(
         builder: (context, galleryService, child) {
           if (_isLoading || galleryService.isLoading) {
@@ -77,36 +79,32 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Loading photos...'),
+                  Text('Finding your photos...'),
                 ],
               ),
             );
           }
 
           if (_error != null || galleryService.error != null) {
+            final message = _error ?? galleryService.error ?? 'Unknown error';
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                    Icon(Icons.error_outline_rounded,
+                        size: 64, color: cs.error),
                     const SizedBox(height: 16),
                     Text(
-                      _error ?? galleryService.error ?? 'Unknown error',
+                      message,
                       style: Theme.of(context).textTheme.bodyLarge,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
-                    if ((_error ?? galleryService.error)?.toLowerCase().contains('permission') == true) ...[
+                    if (message.toLowerCase().contains('permission')) ...[
                       FilledButton(
-                        onPressed: () async {
-                          await PermissionUtils.openSettings();
-                        },
+                        onPressed: () => PermissionUtils.openSettings(),
                         child: const Text('Open Settings'),
                       ),
                       const SizedBox(height: 12),
@@ -128,28 +126,23 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.photo_library_outlined,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                    Icon(Icons.photo_library_outlined,
+                        size: 64, color: cs.onSurfaceVariant),
                     const SizedBox(height: 16),
-                    Text(
-                      'No photos found',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
+                    Text('No photos found',
+                        style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 8),
                     Text(
-                      'No photos were found in the selected date range. Try selecting a different date range.',
+                      'No photos in this date range. Try a different one.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                            color: cs.onSurfaceVariant,
+                          ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
                     OutlinedButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Change Date Range'),
+                      child: const Text('Change date range'),
                     ),
                   ],
                 ),
@@ -157,116 +150,116 @@ class _GalleryScreenState extends State<GalleryScreen> {
             );
           }
 
+          final count = galleryService.photos.length;
+          final previewCount = count > 9 ? 9 : count;
+
           return Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.photo_library,
-                          size: 48,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '${galleryService.photos.length} Photos Found',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Ready to start cleaning your gallery?',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(12),
+                    gradient: AppTheme.brandGradient,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.brandRed.withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
                   child: Column(
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.swipe_left,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(child: Text('Swipe left to delete')),
-                        ],
+                      const Icon(Icons.favorite_rounded,
+                          size: 40, color: Colors.white),
+                      const SizedBox(height: 12),
+                      Text(
+                        '$count photos to review',
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                        textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.swipe_right,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(child: Text('Swipe right to keep')),
-                        ],
+                      const SizedBox(height: 4),
+                      Text(
+                        'Ready to find the keepers?',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.95),
+                            ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                // Photo grid preview (first few photos)
+                const SizedBox(height: 20),
                 Expanded(
                   child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
                     ),
-                    itemCount: galleryService.photos.length > 9 ? 9 : galleryService.photos.length,
+                    itemCount: previewCount,
                     itemBuilder: (context, index) {
                       final photo = galleryService.photos[index];
-                      return FutureBuilder(
-                        future: photo.thumbnailDataWithSize(const ThumbnailSize(200, 200)),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.memory(
-                                snapshot.data!,
-                                fit: BoxFit.cover,
+                      final isLast = index == previewCount - 1 && count > 9;
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            FutureBuilder(
+                              future: photo.thumbnailDataWithSize(
+                                  const ThumbnailSize(300, 300)),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Image.memory(
+                                    snapshot.data!,
+                                    fit: BoxFit.cover,
+                                  );
+                                }
+                                return ColoredBox(
+                                  color: cs.surfaceContainerHighest,
+                                );
+                              },
+                            ),
+                            if (isLast)
+                              Container(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '+${count - 9}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ),
-                            );
-                          }
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceVariant,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        },
+                          ],
+                        ),
                       );
                     },
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 FilledButton(
                   onPressed: _onContinueToSwipe,
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: Text('Start Cleaning'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.style_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text('Start swiping'),
+                    ],
                   ),
                 ),
               ],

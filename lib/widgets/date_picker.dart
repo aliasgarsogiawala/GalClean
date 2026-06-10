@@ -242,9 +242,9 @@ class _DatePickerButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: hasDate ? cs.primaryContainer.withOpacity(0.3) : cs.surface,
+            color: hasDate ? cs.primaryContainer.withValues(alpha: 0.3) : cs.surface,
             border: Border.all(
-              color: hasDate ? cs.primary.withOpacity(0.5) : cs.outline.withOpacity(0.5),
+              color: hasDate ? cs.primary.withValues(alpha: 0.5) : cs.outline.withValues(alpha: 0.5),
               width: hasDate ? 1.5 : 1,
             ),
             borderRadius: BorderRadius.circular(12),
@@ -328,7 +328,7 @@ class _EnhancedChoiceChip extends StatelessWidget {
       selectedColor: cs.secondaryContainer,
       checkmarkColor: cs.onSecondaryContainer,
       side: BorderSide(
-        color: selected ? cs.secondary : cs.outline.withOpacity(0.5),
+        color: selected ? cs.secondary : cs.outline.withValues(alpha: 0.5),
         width: selected ? 1.5 : 1,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

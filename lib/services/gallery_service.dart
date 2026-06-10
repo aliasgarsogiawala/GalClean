@@ -3,10 +3,21 @@ import 'package:photo_manager/photo_manager.dart';
 import '../utils/permissions.dart';
 import 'delete_service.dart';
 
+/// A single review decision, kept so [GalleryService.undoLastAction] can
+/// reverse exactly what the user last did (and not just guess).
+enum _SwipeAction { keep, delete }
+
+class _ReviewRecord {
+  _ReviewRecord(this.photo, this.action);
+  final AssetEntity photo;
+  final _SwipeAction action;
+}
+
 class GalleryService extends ChangeNotifier {
   List<AssetEntity> _photos = [];
-  List<AssetEntity> _photosToDelete = [];
-  List<AssetEntity> _keptPhotos = [];
+  final List<AssetEntity> _photosToDelete = [];
+  final List<AssetEntity> _keptPhotos = [];
+  final List<_ReviewRecord> _history = [];
   bool _isLoading = false;
   String? _error;
 
@@ -79,6 +90,7 @@ class GalleryService extends ChangeNotifier {
     if (!_photosToDelete.contains(photo)) {
       _photosToDelete.add(photo);
       _keptPhotos.remove(photo);
+      _history.add(_ReviewRecord(photo, _SwipeAction.delete));
       notifyListeners();
     }
   }
@@ -87,18 +99,22 @@ class GalleryService extends ChangeNotifier {
     if (!_keptPhotos.contains(photo)) {
       _keptPhotos.add(photo);
       _photosToDelete.remove(photo);
+      _history.add(_ReviewRecord(photo, _SwipeAction.keep));
       notifyListeners();
     }
   }
 
+  /// Reverses the most recent decision (keep or delete) for the right photo.
   void undoLastAction() {
-    if (_photosToDelete.isNotEmpty) {
-      _photosToDelete.removeLast();
-      notifyListeners();
-    } else if (_keptPhotos.isNotEmpty) {
-      _keptPhotos.removeLast();
-      notifyListeners();
+    if (_history.isEmpty) return;
+
+    final last = _history.removeLast();
+    if (last.action == _SwipeAction.delete) {
+      _photosToDelete.remove(last.photo);
+    } else {
+      _keptPhotos.remove(last.photo);
     }
+    notifyListeners();
   }
 
   Future<bool> deleteMarkedPhotos() async {
@@ -139,6 +155,7 @@ class GalleryService extends ChangeNotifier {
   void resetSelection() {
     _photosToDelete.clear();
     _keptPhotos.clear();
+    _history.clear();
     _error = null;
     notifyListeners();
   }
@@ -147,6 +164,7 @@ class GalleryService extends ChangeNotifier {
     _photos.clear();
     _photosToDelete.clear();
     _keptPhotos.clear();
+    _history.clear();
     _error = null;
     notifyListeners();
   }

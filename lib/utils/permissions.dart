@@ -20,7 +20,7 @@ class PermissionUtils {
 
   static Future<bool> hasGalleryPermissions() async {
     final PermissionState state = await PhotoManager.requestPermissionExtend();
-]    return state.isAuth || state == PermissionState.limited;
+    return state.isAuth || state == PermissionState.limited;
   }
 
   static Future<bool> isLimitedAccess() async {
